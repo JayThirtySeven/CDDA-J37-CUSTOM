@@ -2212,6 +2212,49 @@ std::string item::tname_generate_tagtext() const
         ret << _( " (right)" );
     }
 
+    if( has_flag( "FIT" ) ) {
+        ret << _( " (fits)" );
+    }
+
+    if( damage() != 0 ) {
+        if( get_option<bool>( "ITEM_HEALTH_BAR" ) ) {
+            ret << " (<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + " </color>)";
+        } else {
+            if( damage() < 0 )  {
+                if( is_gun() ) {
+                    ret << pgettext( "damage adjective", " (accurized)" );
+                } else {
+                    ret << pgettext( "damage adjective", " (reinforced)" );
+                }
+            } else {
+                ret << string_format( " (%s)", get_base_material().dmg_adj( damage() ) );
+            }
+        }
+    }
+
+    if( is_gun() || is_tool() || is_magazine() ) {
+        for( const auto mod : is_gun() ? gunmods() : toolmods() ) {
+            if( !type->gun || !type->gun->built_in_mods.count( mod->typeId() ) ) {
+                ret << " (modified)";
+            }
+        }
+    } else if( is_armor() && item_tags.count( "wooled" ) + item_tags.count( "furred" ) +
+               item_tags.count( "leather_padded" ) + item_tags.count( "kevlar_padded" ) > 0 ) {
+        ret << " (modified)";
+    }
+
+    if( !faults.empty() ) {
+        ret << _( " (faulty)" );
+    }
+
+    if( !made_of( LIQUID ) ) {
+        if( volume() >= 1000_ml && burnt * 125_ml >= volume() ) {
+            ret << pgettext( "burnt adjective", " (v.burnt)" );
+        } else if( burnt > 0 ) {
+            ret << pgettext( "burnt adjective", " (burnt)" );
+        }
+    }
+    
     if( is_food() ) {
         if( rotten() ) {
             ret << _( " (rotten)" );
@@ -2228,10 +2271,6 @@ std::string item::tname_generate_tagtext() const
         if( has_flag( "COLD" ) ) {
             ret << _( " (cold)" );
         }
-    }
-
-    if( has_flag( "FIT" ) ) {
-        ret << _( " (fits)" );
     }
 
     if( is_filthy() ) {
@@ -2278,82 +2317,22 @@ std::string item::tname_generate_tagtext() const
 
 std::string item::tname_generate_maintext( unsigned int quantity ) const
 {
-    std::stringstream ret;
-
-    ret.str( "" );
     if( is_corpse() || typeId() == "blood" || item_vars.find( "name" ) != item_vars.end() ) {
-        ret << type_name( quantity );
+        return type_name( quantity );
     } else {
-        ret <<  label( quantity );
+        return label( quantity );
     }
-
-    if( is_gun() || is_tool() || is_magazine() ) {
-        for( const auto mod : is_gun() ? gunmods() : toolmods() ) {
-            if( !type->gun || !type->gun->built_in_mods.count( mod->typeId() ) ) {
-                ret << "+";
-            }
-        }
-    } else if( is_armor() && item_tags.count( "wooled" ) + item_tags.count( "furred" ) +
-               item_tags.count( "leather_padded" ) + item_tags.count( "kevlar_padded" ) > 0 ) {
-        ret << "+";
-    }
-
-    return ret.str();
 }
 
 std::string item::tname( unsigned int quantity, bool with_prefix ) const
 {
-    // MATERIALS-TODO: put this in json
-    std::string damtext;
-    std::string burntext;
-
-    if( with_prefix ) {
-        if( ( damage() != 0 || ( get_option<bool>( "ITEM_HEALTH_BAR" ) && is_armor() ) ) && !is_null() ) {
-            if( damage() < 0 )  {
-                if( get_option<bool>( "ITEM_HEALTH_BAR" ) ) {
-                    damtext = "<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + " </color>";
-                } else if( is_gun() ) {
-                    damtext = pgettext( "damage adjective", "accurized " );
-                } else {
-                    damtext = pgettext( "damage adjective", "reinforced " );
-                }
-            } else if( typeId() == "corpse" ) {
-                if( damage() > 0 ) {
-                    switch( damage() ) {
-                        case 1:
-                            damtext = pgettext( "damage adjective", "bruised " );
-                            break;
-                        case 2:
-                            damtext = pgettext( "damage adjective", "damaged " );
-                            break;
-                        case 3:
-                            damtext = pgettext( "damage adjective", "mangled " );
-                            break;
-                        default:
-                            damtext = pgettext( "damage adjective", "pulped " );
-                            break;
-                    }
-                }
-            } else if( get_option<bool>( "ITEM_HEALTH_BAR" ) ) {
-                damtext = "[<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + "</color>] ";
-            } else {
-                damtext = string_format( "%s ", get_base_material().dmg_adj( damage() ) );
-            }
-        }
-
-        if( !faults.empty() ) {
-            damtext.insert( 0, _( "faulty " ) );
-        }
-
-        if( with_prefix && !made_of( LIQUID ) ) {
-            if( volume() >= 1000_ml && burnt * 125_ml >= volume() ) {
-                burntext = pgettext( "burnt adjective", "badly burnt " );
-            } else if( burnt > 0 ) {
-                burntext = pgettext( "burnt adjective", "burnt " );
-            }
-        }
+    if( with_prefix || true ){ // suppress warning about unused arg
+        return base_name( quantity );
     }
+}
 
+std::string item::base_name( unsigned int quantity ) const
+{
     std::string vehtext;
     if( is_engine() && engine_displacement() > 0 ) {
         vehtext = string_format( pgettext( "vehicle adjective", "%2.1fL " ),
@@ -2377,8 +2356,7 @@ std::string item::tname( unsigned int quantity, bool with_prefix ) const
     }
 
     //~ This is a string to construct the item name as it is displayed. This format string has been added for maximum flexibility. The strings are: %1$s: Damage text (e.g. "bruised"). %2$s: burn adjectives (e.g. "burnt"). %3$s: tool modifier text (e.g. "atomic"). %4$s: vehicle part text (e.g. "3.8-Liter"). $5$s: main item text (e.g. "apple"). %6s: tags (e.g. "(wet) (fits)").
-    std::string final = string_format( _( "%1$s%2$s%3$s%4$s%5$s%6$s" ), damtext,
-                                       burntext, modtext, vehtext, maintext, tagtext );
+    std::string final = string_format( _( "%1$s%2$s%3$s%4$s" ), modtext, vehtext, maintext, tagtext );
 
     if( item_vars.find( "item_note" ) != item_vars.end() ) {
         //~ %s is an item name. This style is used to denote items with notes.
@@ -3473,6 +3451,7 @@ bool item::inc_damage()
 
 nc_color item::damage_color() const
 {
+    /*
     // @todo: unify with getDurabilityColor
 
     // reinforced, undamaged and nearly destroyed items are special case
@@ -3495,6 +3474,23 @@ nc_color item::damage_color() const
         return c_magenta;
     }
     return c_yellow;
+    */
+    
+    auto damage_fraction = precise_damage() / max_damage();
+  
+    if( damage_fraction < 0.0 ) {
+        return c_green;
+    } else if( damage_fraction == 0.0 ) {
+        return c_white;
+    } else if( damage_fraction <= 0.3 ) {
+        return c_yellow;
+    } else if( damage_fraction <= 0.6 ) {
+        return c_light_red;
+    } else if( damage_fraction <= 0.9 ) {
+        return c_red;
+    } else {
+        return c_dark_gray;
+    }
 }
 
 std::string item::damage_symbol() const
@@ -3523,7 +3519,19 @@ std::string item::damage_symbol() const
   
   auto damage_fraction = precise_damage() / max_damage();
   
-  return string_format( "%02i", (int)( damage_fraction * 100 ) );
+  if( damage_fraction < 0.0 ) {
+    return "++++";
+  } else if( damage_fraction == 0.0 ) {
+    return "||||";
+  } else if( damage_fraction <= 0.3 ) {
+    return "|||-";
+  } else if( damage_fraction <= 0.6 ) {
+    return "||--";
+  } else if( damage_fraction <= 0.9 ) {
+    return "|---";
+  } else {
+    return "----";
+  }
 }
 
 const std::set<itype_id>& item::repaired_with() const

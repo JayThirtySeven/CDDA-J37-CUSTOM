@@ -3498,7 +3498,7 @@ nc_color item::damage_color() const
 }
 
 std::string item::damage_symbol() const
-{
+{ /*
     // reinforced, undamaged and nearly destroyed items are special case
     if( damage() < 0 ) {
         return _( R"(++)" );
@@ -3519,6 +3519,11 @@ std::string item::damage_symbol() const
         return _( R"(|.)" );
     }
     return _( R"(|\)" );
+  */
+  
+  auto damage_fraction = precise_damage() / max_damage();
+  
+  return string_format( "(%02i)", (int)( damage_fraction * 100 ) );
 }
 
 const std::set<itype_id>& item::repaired_with() const

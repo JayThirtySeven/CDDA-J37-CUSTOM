@@ -327,6 +327,8 @@ public:
      */
     std::string tname( unsigned int quantity = 1, bool with_prefix = true ) const;
 
+    std::string base_name( unsigned int quantity = 1) const;
+    
     /**
      * Returns the item name and the charges or contained charges (if the item can have
      * charges at all). Calls @ref tname with given quantity and with_prefix being true.

@@ -2335,7 +2335,7 @@ std::string item::tname( unsigned int quantity, bool with_prefix ) const
                     }
                 }
             } else if( get_option<bool>( "ITEM_HEALTH_BAR" ) ) {
-                damtext = "<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + " </color>";
+                damtext = "[<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + "</color>] ";
             } else {
                 damtext = string_format( "%s ", get_base_material().dmg_adj( damage() ) );
             }
@@ -3523,7 +3523,7 @@ std::string item::damage_symbol() const
   
   auto damage_fraction = precise_damage() / max_damage();
   
-  return string_format( "(%02i)", (int)( damage_fraction * 100 ) );
+  return string_format( "%02i", (int)( damage_fraction * 100 ) );
 }
 
 const std::set<itype_id>& item::repaired_with() const

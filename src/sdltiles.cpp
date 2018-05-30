@@ -2016,6 +2016,9 @@ TTF_Font *CachedTTFFont::get_font(cata_cursesport::font_style FS)
         shrink_to_fit_style |= TTF_STYLE_UNDERLINE;
     }
 
+    _font = TTF_OpenFontIndex( typeface.c_str(), fontsize, faceIndex );
+
+/*
     int _fontsize = fontsize;
     while ( _fontsize > 0 ) {
         _font = TTF_OpenFontIndex( typeface.c_str(), _fontsize, faceIndex );
@@ -2037,6 +2040,7 @@ TTF_Font *CachedTTFFont::get_font(cata_cursesport::font_style FS)
     if (!_font) {
         throw std::runtime_error("No font size that satisfies the requirements found");
     }
+*/
     TTF_SetFontStyle( _font, style );
     font_map.emplace( FS, TTF_Font_Ptr( _font ) );
 

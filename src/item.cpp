@@ -2218,7 +2218,7 @@ std::string item::tname_generate_tagtext() const
 
     if( damage() != 0 ) {
         if( get_option<bool>( "ITEM_HEALTH_BAR" ) ) {
-            ret << " (<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + " </color>)";
+            ret << " (<color_" + string_from_color( damage_color() ) + ">" + damage_symbol() + "</color>)";
         } else {
             if( damage() < 0 )  {
                 if( is_gun() ) {
@@ -2236,6 +2236,7 @@ std::string item::tname_generate_tagtext() const
         for( const auto mod : is_gun() ? gunmods() : toolmods() ) {
             if( !type->gun || !type->gun->built_in_mods.count( mod->typeId() ) ) {
                 ret << " (modified)";
+                break;
             }
         }
     } else if( is_armor() && item_tags.count( "wooled" ) + item_tags.count( "furred" ) +
